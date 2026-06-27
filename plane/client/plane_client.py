@@ -16,6 +16,7 @@ from ..api.states import States
 from ..api.stickies import Stickies
 from ..api.teamspaces import Teamspaces
 from ..api.users import Users
+from ..api.views import Views
 from ..api.work_item_properties import WorkItemProperties
 from ..api.work_item_relation_definitions import WorkItemRelationDefinitions
 from ..api.work_item_types import WorkItemTypes
@@ -83,3 +84,4 @@ class PlaneClient:
         self.workspace_project_states = WorkspaceProjectStates(self.config)
         self.work_item_relation_definitions = WorkItemRelationDefinitions(self.config)
         self.releases = Releases(self.config)
+        self.views = Views(self.config)

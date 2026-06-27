@@ -257,3 +257,137 @@ def test_remove_member_hits_member_pk_path(monkeypatch):
     monkeypatch.setattr(res, "_delete", _delete)
     assert res.remove_member("ws", "proj", "pm1") is None
     assert captured["endpoint"] == "ws/projects/proj/members/pm1"
+
+
+# --- views (gap 1.11): saved filters, project vs workspace path-shape -------
+#
+# A single Views resource serves both project views and workspace views: when
+# project_id is None the workspace path is used, otherwise the project path.
+# Lists are enveloped (rule D) and unwrapped via _as_items. Paths carry NO
+# trailing slash (BaseResource._build_url appends it).
+
+from plane.models.views import CreateView, UpdateView, View
+
+
+def test_list_project_views_uses_project_path_and_unwraps_envelope(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _get(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return {"results": [{"id": "v1", "name": "Bugs"}], "total_count": 1}
+
+    monkeypatch.setattr(res, "_get", _get)
+    out = res.list("ws", "proj")
+    assert captured["endpoint"] == "ws/projects/proj/views"
+    assert isinstance(out, list)
+    assert [v.id for v in out] == ["v1"]
+    assert out[0].name == "Bugs"
+
+
+def test_list_workspace_views_uses_workspace_path_when_project_none(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _get(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return {"results": [{"id": "wv1", "name": "My Work"}]}
+
+    monkeypatch.setattr(res, "_get", _get)
+    out = res.list("ws")
+    assert captured["endpoint"] == "ws/views"
+    assert [v.name for v in out] == ["My Work"]
+
+
+def test_list_views_accepts_bare_list(monkeypatch):
+    res = _client().views
+    monkeypatch.setattr(res, "_get", lambda *a, **k: [{"id": "v1", "name": "X"}])
+    out = res.list("ws", "proj")
+    assert [v.id for v in out] == ["v1"]
+
+
+def test_create_project_view_posts_to_project_path(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _post(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "v1", "name": "Bugs", "access": 1}
+
+    monkeypatch.setattr(res, "_post", _post)
+    out = res.create("ws", CreateView(name="Bugs", access=1), project_id="proj")
+    assert captured["endpoint"] == "ws/projects/proj/views"
+    # exclude_none drops unset optionals (description/query/filters/...)
+    assert captured["data"] == {"name": "Bugs", "access": 1}
+    assert isinstance(out, View)
+    assert out.id == "v1"
+
+
+def test_create_workspace_view_posts_to_workspace_path(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _post(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "wv1", "name": "Mine"}
+
+    monkeypatch.setattr(res, "_post", _post)
+    out = res.create("ws", CreateView(name="Mine"))
+    assert captured["endpoint"] == "ws/views"
+    assert captured["data"] == {"name": "Mine"}
+    assert out.id == "wv1"
+
+
+def test_retrieve_view_project_vs_workspace_path(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _get(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return {"id": "v1", "name": "Bugs"}
+
+    monkeypatch.setattr(res, "_get", _get)
+
+    assert res.retrieve("ws", "v1", project_id="proj").id == "v1"
+    assert captured["endpoint"] == "ws/projects/proj/views/v1"
+
+    assert res.retrieve("ws", "v1").id == "v1"
+    assert captured["endpoint"] == "ws/views/v1"
+
+
+def test_update_view_patches_correct_path_and_drops_none(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _patch(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "v1", "name": "Renamed"}
+
+    monkeypatch.setattr(res, "_patch", _patch)
+    out = res.update("ws", "v1", UpdateView(name="Renamed"), project_id="proj")
+    assert captured["endpoint"] == "ws/projects/proj/views/v1"
+    assert captured["data"] == {"name": "Renamed"}
+    assert out.name == "Renamed"
+
+    res.update("ws", "v1", UpdateView(name="Renamed"))
+    assert captured["endpoint"] == "ws/views/v1"
+
+
+def test_delete_view_project_vs_workspace_path(monkeypatch):
+    res = _client().views
+    captured = {}
+
+    def _delete(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return None
+
+    monkeypatch.setattr(res, "_delete", _delete)
+
+    assert res.delete("ws", "v1", project_id="proj") is None
+    assert captured["endpoint"] == "ws/projects/proj/views/v1"
+
+    assert res.delete("ws", "v1") is None
+    assert captured["endpoint"] == "ws/views/v1"
