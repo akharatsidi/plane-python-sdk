@@ -98,3 +98,17 @@ class BaseResource:
             response.status_code,
             payload,
         )
+
+    @staticmethod
+    def _as_items(response: Any) -> Any:
+        """Unwrap a paginated envelope (``{"results": [...]}``) to its list.
+
+        Plane returns list endpoints as an enveloped page
+        (``{"grouped_by": ..., "results": [...], ...}``); older call sites
+        iterated the response directly and broke on the envelope's keys.
+        Returns ``response["results"]`` when present, otherwise the response
+        unchanged so a bare list passes straight through.
+        """
+        if isinstance(response, dict) and "results" in response:
+            return response["results"]
+        return response

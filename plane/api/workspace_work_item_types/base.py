@@ -21,7 +21,7 @@ class WorkspaceWorkItemTypes(BaseResource):
             workspace_slug: The workspace slug identifier
         """
         response = self._get(f"{workspace_slug}/work-item-types/")
-        return [WorkItemType.model_validate(item) for item in response]
+        return [WorkItemType.model_validate(item) for item in self._as_items(response)]
 
     def create(self, workspace_slug: str, data: CreateWorkItemType) -> WorkItemType:
         """Create a new work item type in the workspace.

@@ -50,7 +50,9 @@ class WorkItemPropertyValues(BaseResource):
             f"{workspace_slug}/projects/{project_id}/work-items/{work_item_id}"
             f"/work-item-properties/{property_id}/values"
         )
-        # Handle both single value and list responses
+        # Handle enveloped list, bare list, and single-object responses
+        if isinstance(response, dict) and "results" in response:
+            response = response["results"]
         if isinstance(response, list):
             return [WorkItemPropertyValueDetail.model_validate(item) for item in response]
         return WorkItemPropertyValueDetail.model_validate(response)
@@ -88,7 +90,9 @@ class WorkItemPropertyValues(BaseResource):
             f"/work-item-properties/{property_id}/values",
             data.model_dump(exclude_none=True),
         )
-        # Handle both single value and list responses
+        # Handle enveloped list, bare list, and single-object responses
+        if isinstance(response, dict) and "results" in response:
+            response = response["results"]
         if isinstance(response, list):
             return [WorkItemPropertyValueDetail.model_validate(item) for item in response]
         return WorkItemPropertyValueDetail.model_validate(response)
@@ -134,7 +138,9 @@ class WorkItemPropertyValues(BaseResource):
             f"/work-item-properties/{property_id}/values",
             payload,
         )
-        # Handle both single value and list responses
+        # Handle enveloped list, bare list, and single-object responses
+        if isinstance(response, dict) and "results" in response:
+            response = response["results"]
         if isinstance(response, list):
             return [WorkItemPropertyValueDetail.model_validate(item) for item in response]
         return WorkItemPropertyValueDetail.model_validate(response)

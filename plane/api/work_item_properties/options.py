@@ -32,7 +32,7 @@ class WorkItemPropertyOptions(BaseResource):
             f"{workspace_slug}/projects/{project_id}/work-item-properties/{property_id}/options",
             params=params,
         )
-        return [WorkItemPropertyOption.model_validate(item) for item in response]
+        return [WorkItemPropertyOption.model_validate(item) for item in self._as_items(response)]
 
     def retrieve(
         self, workspace_slug: str, project_id: str, property_id: str, option_id: str

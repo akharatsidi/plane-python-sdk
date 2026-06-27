@@ -109,7 +109,7 @@ class WorkItemProperties(BaseResource):
             f"{workspace_slug}/projects/{project_id}/work-item-properties",
             params=params,
         )
-        return [WorkItemProperty.model_validate(item) for item in response]
+        return [WorkItemProperty.model_validate(item) for item in self._as_items(response)]
 
     def create_project(
         self, workspace_slug: str, project_id: str, data: CreateWorkItemProperty
@@ -224,5 +224,5 @@ class WorkItemProperties(BaseResource):
             f"{workspace_slug}/projects/{project_id}/work-item-types/{type_id}/work-item-properties",
             params=params,
         )
-        return [WorkItemProperty.model_validate(item) for item in response]
+        return [WorkItemProperty.model_validate(item) for item in self._as_items(response)]
 

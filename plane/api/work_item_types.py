@@ -88,7 +88,7 @@ class WorkItemTypes(BaseResource):
         response = self._get(
             f"{workspace_slug}/projects/{project_id}/work-item-types", params=params
         )
-        return [WorkItemType.model_validate(item) for item in response]
+        return [WorkItemType.model_validate(item) for item in self._as_items(response)]
 
     def import_to_project(
         self,

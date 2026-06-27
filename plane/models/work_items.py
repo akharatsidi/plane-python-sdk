@@ -53,8 +53,8 @@ class WorkItemDetail(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     id: str | None = None
-    assignees: list[UserLite] = Field(default_factory=list)
-    labels: list[Label] = Field(default_factory=list)
+    assignees: list[str] | list[UserLite] = Field(default_factory=list)
+    labels: list[str] | list[Label] = Field(default_factory=list)
     type_id: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
@@ -486,42 +486,56 @@ class RemoveWorkItemRelation(BaseModel):
     )
 
 
+class WorkItemRelationRef(BaseModel):
+    """A related work item reference as returned by the relations endpoint.
+
+    The Plane API returns each relation bucket as objects
+    ``{project_id, issue_id}``, not bare ID strings. ``extra="allow"`` tolerates
+    additional fields the backend may include.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    project_id: str | None = None
+    issue_id: str | None = None
+
+
 class WorkItemRelationResponse(BaseModel):
     """Response model for work item relations."""
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    blocking: list[str] = Field(
-        ...,
-        description="List of issue IDs that are blocking this issue",
+    blocking: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that are blocking this issue",
     )
-    blocked_by: list[str] = Field(
-        ...,
-        description="List of issue IDs that this issue is blocked by",
+    blocked_by: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that this issue is blocked by",
     )
-    duplicate: list[str] = Field(
-        ...,
-        description="List of issue IDs that are duplicates of this issue",
+    duplicate: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that are duplicates of this issue",
     )
-    relates_to: list[str] = Field(
-        ...,
-        description="List of issue IDs that relate to this issue",
+    relates_to: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that relate to this issue",
     )
-    start_after: list[str] = Field(
-        ...,
-        description="List of issue IDs that start after this issue",
+    start_after: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that start after this issue",
     )
-    start_before: list[str] = Field(
-        ...,
-        description="List of issue IDs that start before this issue",
+    start_before: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that start before this issue",
     )
-    finish_after: list[str] = Field(
-        ...,
-        description="List of issue IDs that finish after this issue",
+    finish_after: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that finish after this issue",
     )
-    finish_before: list[str] = Field(
-        ...,
-        description="List of issue IDs that finish before this issue",
+    finish_before: list[WorkItemRelationRef] = Field(
+        default_factory=list,
+        description="Work items that finish before this issue",
     )
 
 

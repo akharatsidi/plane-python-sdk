@@ -297,7 +297,7 @@ class WorkItemPropertyValueDetail(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    id: str = Field(..., description="Unique identifier for this property value")
+    id: str | None = Field(None, description="Unique identifier for this property value")
     property_id: str = Field(..., description="ID of the property")
     issue_id: str = Field(..., description="ID of the work item")
     value: str | bool | float | None = Field(

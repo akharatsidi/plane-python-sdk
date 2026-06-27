@@ -28,7 +28,7 @@ class WorkLogs(BaseResource):
             f"{workspace_slug}/projects/{project_id}/work-items/{work_item_id}/worklogs",
             params=params,
         )
-        return [WorkItemWorkLog.model_validate(item) for item in response]
+        return [WorkItemWorkLog.model_validate(item) for item in self._as_items(response)]
 
     def create(
         self,
