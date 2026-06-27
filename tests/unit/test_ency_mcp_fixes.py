@@ -151,3 +151,109 @@ def test_property_values_single_object_still_returns_single(monkeypatch):
     out = res.retrieve("ws", "proj", "wi", "p1")
     assert isinstance(out, WorkItemPropertyValueDetail)
     assert out.value == "x"
+
+
+# --- workspace invitations (create / list / delete) -------------------------
+#
+# Role values are ints throughout: ADMIN=20, MEMBER=15, GUEST=5.
+# BaseResource._build_url appends a trailing slash, so methods pass paths
+# WITHOUT a trailing slash; here we assert the path-shape the method builds
+# (the first positional arg to the stubbed HTTP method).
+
+
+def test_create_invite_posts_email_and_role(monkeypatch):
+    res = _client().workspaces
+    captured = {}
+
+    def _post(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "inv1", "email": "a@b.test", "role": 15}
+
+    monkeypatch.setattr(res, "_post", _post)
+    out = res.create_invite("ws", "a@b.test", 15)
+    assert captured["endpoint"] == "ws/invitations"
+    assert captured["data"] == {"email": "a@b.test", "role": 15}
+    assert out == {"id": "inv1", "email": "a@b.test", "role": 15}
+
+
+def test_list_invites_unwraps_envelope(monkeypatch):
+    res = _client().workspaces
+    captured = {}
+
+    def _get(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return {"results": [{"id": "inv1"}, {"id": "inv2"}], "total_count": 2}
+
+    monkeypatch.setattr(res, "_get", _get)
+    out = res.list_invites("ws")
+    assert captured["endpoint"] == "ws/invitations"
+    assert [i["id"] for i in out] == ["inv1", "inv2"]
+
+
+def test_list_invites_accepts_bare_list(monkeypatch):
+    res = _client().workspaces
+    monkeypatch.setattr(res, "_get", lambda *a, **k: [{"id": "inv1"}])
+    out = res.list_invites("ws")
+    assert out == [{"id": "inv1"}]
+
+
+def test_delete_invite_hits_invitation_path(monkeypatch):
+    res = _client().workspaces
+    captured = {}
+
+    def _delete(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return None
+
+    monkeypatch.setattr(res, "_delete", _delete)
+    assert res.delete_invite("ws", "inv1") is None
+    assert captured["endpoint"] == "ws/invitations/inv1"
+
+
+# --- project members (add / update / remove) --------------------------------
+
+
+def test_add_member_posts_member_and_role(monkeypatch):
+    res = _client().projects
+    captured = {}
+
+    def _post(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "pm1", "member": "u1", "role": 20}
+
+    monkeypatch.setattr(res, "_post", _post)
+    out = res.add_member("ws", "proj", "u1", 20)
+    assert captured["endpoint"] == "ws/projects/proj/members"
+    assert captured["data"] == {"member": "u1", "role": 20}
+    assert out == {"id": "pm1", "member": "u1", "role": 20}
+
+
+def test_update_member_patches_role(monkeypatch):
+    res = _client().projects
+    captured = {}
+
+    def _patch(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "pm1", "role": 5}
+
+    monkeypatch.setattr(res, "_patch", _patch)
+    out = res.update_member("ws", "proj", "pm1", 5)
+    assert captured["endpoint"] == "ws/projects/proj/members/pm1"
+    assert captured["data"] == {"role": 5}
+    assert out == {"id": "pm1", "role": 5}
+
+
+def test_remove_member_hits_member_pk_path(monkeypatch):
+    res = _client().projects
+    captured = {}
+
+    def _delete(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return None
+
+    monkeypatch.setattr(res, "_delete", _delete)
+    assert res.remove_member("ws", "proj", "pm1") is None
+    assert captured["endpoint"] == "ws/projects/proj/members/pm1"

@@ -155,3 +155,62 @@ class Projects(BaseResource):
         """
         self._delete(f"{workspace_slug}/projects/{project_id}/archive")
 
+    def add_member(
+        self, workspace_slug: str, project_id: str, member_id: str, role: int
+    ) -> dict:
+        """Add a member to a project.
+
+        POST ``{slug}/projects/{pid}/members`` with body
+        ``{member, role}``. Returns the raw project-member dict from the
+        backend.
+
+        Role is an integer: ADMIN=20, MEMBER=15, GUEST=5.
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            project_id: UUID of the project
+            member_id: User UUID to add as a project member
+            role: Project role as an int (ADMIN=20, MEMBER=15, GUEST=5)
+        """
+        return self._post(
+            f"{workspace_slug}/projects/{project_id}/members",
+            {"member": member_id, "role": role},
+        )
+
+    def update_member(
+        self, workspace_slug: str, project_id: str, member_pk: str, role: int
+    ) -> dict:
+        """Update a project member's role.
+
+        PATCH ``{slug}/projects/{pid}/members/{member_pk}`` with body
+        ``{role}``. Returns the raw updated project-member dict.
+
+        Role is an integer: ADMIN=20, MEMBER=15, GUEST=5.
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            project_id: UUID of the project
+            member_pk: Primary key of the project-member record
+            role: Project role as an int (ADMIN=20, MEMBER=15, GUEST=5)
+        """
+        return self._patch(
+            f"{workspace_slug}/projects/{project_id}/members/{member_pk}",
+            {"role": role},
+        )
+
+    def remove_member(
+        self, workspace_slug: str, project_id: str, member_pk: str
+    ) -> None:
+        """Remove a member from a project.
+
+        DELETE ``{slug}/projects/{pid}/members/{member_pk}``.
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            project_id: UUID of the project
+            member_pk: Primary key of the project-member record to remove
+        """
+        return self._delete(
+            f"{workspace_slug}/projects/{project_id}/members/{member_pk}"
+        )
+

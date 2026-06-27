@@ -42,3 +42,43 @@ class Workspaces(BaseResource):
         """
         response = self._patch(f"{workspace_slug}/features", data.model_dump(exclude_none=True))
         return WorkspaceFeature.model_validate(response)
+
+    def create_invite(self, workspace_slug: str, email: str, role: int) -> dict:
+        """Invite a user to a workspace by email.
+
+        POST ``{slug}/invitations`` with body ``{email, role}``. Returns the
+        raw invitation dict as sent by the backend.
+
+        Role is an integer: ADMIN=20, MEMBER=15, GUEST=5.
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            email: Email address of the invitee
+            role: Workspace role as an int (ADMIN=20, MEMBER=15, GUEST=5)
+        """
+        return self._post(
+            f"{workspace_slug}/invitations", {"email": email, "role": role}
+        )
+
+    def list_invites(self, workspace_slug: str) -> list:
+        """List pending invitations for a workspace.
+
+        GET ``{slug}/invitations``. Unwraps a paginated envelope
+        (``{"results": [...]}``) to a bare list via ``_as_items``.
+
+        Args:
+            workspace_slug: The workspace slug identifier
+        """
+        response = self._get(f"{workspace_slug}/invitations")
+        return self._as_items(response)
+
+    def delete_invite(self, workspace_slug: str, invitation_id: str) -> None:
+        """Revoke a pending workspace invitation.
+
+        DELETE ``{slug}/invitations/{invitation_id}``.
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            invitation_id: UUID of the invitation to revoke
+        """
+        return self._delete(f"{workspace_slug}/invitations/{invitation_id}")
