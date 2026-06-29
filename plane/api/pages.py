@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 
 from ..models.pages import CreatePage, Page, PaginatedPageResponse
@@ -13,15 +14,19 @@ class Pages(BaseResource):
         self,
         workspace_slug: str,
         params: PaginatedQueryParams | None = None,
+        include_archived: bool = False,
     ) -> PaginatedPageResponse:
         """List all workspace pages.
 
         Args:
             workspace_slug: The workspace slug identifier
             params: Optional pagination/query parameters
+            include_archived: Include archived pages (default: active only)
         """
-        query_params = params.model_dump(exclude_none=True) if params else None
-        response = self._get(f"{workspace_slug}/pages", params=query_params)
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        if include_archived:
+            query_params = {**query_params, "archived": "true"}
+        response = self._get(f"{workspace_slug}/pages", params=query_params or None)
         return PaginatedPageResponse.model_validate(response)
 
     def list_project_pages(
@@ -29,6 +34,7 @@ class Pages(BaseResource):
         workspace_slug: str,
         project_id: str,
         params: PaginatedQueryParams | None = None,
+        include_archived: bool = False,
     ) -> PaginatedPageResponse:
         """List all pages in a project.
 
@@ -36,10 +42,13 @@ class Pages(BaseResource):
             workspace_slug: The workspace slug identifier
             project_id: UUID of the project
             params: Optional pagination/query parameters
+            include_archived: Include archived pages (default: active only)
         """
-        query_params = params.model_dump(exclude_none=True) if params else None
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        if include_archived:
+            query_params = {**query_params, "archived": "true"}
         response = self._get(
-            f"{workspace_slug}/projects/{project_id}/pages", params=query_params
+            f"{workspace_slug}/projects/{project_id}/pages", params=query_params or None
         )
         return PaginatedPageResponse.model_validate(response)
 
@@ -135,3 +144,40 @@ class Pages(BaseResource):
             page_id: UUID of the page
         """
         return self._delete(f"{workspace_slug}/projects/{project_id}/pages/{page_id}")
+
+    def update_workspace_page(
+        self, workspace_slug: str, page_id: str, data: Mapping[str, Any]
+    ) -> Page:
+        """Update a workspace page (PATCH; omitted fields unchanged).
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            page_id: UUID of the page
+            data: Fields to update (name, description_html, access, is_locked)
+        """
+        response = self._patch(f"{workspace_slug}/pages/{page_id}", data)
+        return Page.model_validate(response)
+
+    def update_project_page(
+        self, workspace_slug: str, project_id: str, page_id: str, data: Mapping[str, Any]
+    ) -> Page:
+        """Update a project page (PATCH; omitted fields unchanged).
+
+        Args:
+            workspace_slug: The workspace slug identifier
+            project_id: UUID of the project
+            page_id: UUID of the page
+            data: Fields to update (name, description_html, access, is_locked)
+        """
+        response = self._patch(
+            f"{workspace_slug}/projects/{project_id}/pages/{page_id}", data
+        )
+        return Page.model_validate(response)
+
+    def archive_project_page(self, workspace_slug: str, project_id: str, page_id: str) -> Any:
+        """Archive a project page (soft hide via archived_at). Reverse with unarchive."""
+        return self._post(f"{workspace_slug}/projects/{project_id}/pages/{page_id}/archive")
+
+    def unarchive_project_page(self, workspace_slug: str, project_id: str, page_id: str) -> Any:
+        """Unarchive a project page (clears archived_at)."""
+        return self._post(f"{workspace_slug}/projects/{project_id}/pages/{page_id}/unarchive")

@@ -58,6 +58,7 @@ class CreateWorkItemProperty(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     relation_type: RelationType | None = None
+    name: str | None = None
     display_name: str
     description: str | None = None
     property_type: PropertyType

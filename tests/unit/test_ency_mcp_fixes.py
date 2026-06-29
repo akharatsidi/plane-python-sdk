@@ -18,6 +18,7 @@ the default suite instead of skipping like the live integration tests.
 """
 
 from plane.client import PlaneClient
+from plane.models.views import CreateView, UpdateView, View
 from plane.models.work_item_properties import WorkItemPropertyValueDetail
 from plane.models.work_items import WorkItemDetail, WorkItemRelationResponse
 
@@ -266,8 +267,6 @@ def test_remove_member_hits_member_pk_path(monkeypatch):
 # Lists are enveloped (rule D) and unwrapped via _as_items. Paths carry NO
 # trailing slash (BaseResource._build_url appends it).
 
-from plane.models.views import CreateView, UpdateView, View
-
 
 def test_list_project_views_uses_project_path_and_unwraps_envelope(monkeypatch):
     res = _client().views
@@ -391,3 +390,47 @@ def test_delete_view_project_vs_workspace_path(monkeypatch):
 
     assert res.delete("ws", "v1") is None
     assert captured["endpoint"] == "ws/views/v1"
+
+
+# --- Sprint 2: property explicit name + page update/archive -----------------
+
+
+def test_create_work_item_property_carries_explicit_name():
+    from plane.models.work_item_properties import CreateWorkItemProperty
+
+    body = CreateWorkItemProperty(
+        name="expected_rev_usd", display_name="Expected Revenue (USD)", property_type="DECIMAL"
+    ).model_dump(exclude_none=True)
+    assert body["name"] == "expected_rev_usd"
+    assert body["display_name"] == "Expected Revenue (USD)"
+
+
+def test_update_project_page_patches_path_and_body(monkeypatch):
+    res = _client().pages
+    captured = {}
+
+    def _patch(endpoint, data=None, *a, **k):
+        captured["endpoint"] = endpoint
+        captured["data"] = data
+        return {"id": "pg1", "name": "Renamed"}
+
+    monkeypatch.setattr(res, "_patch", _patch)
+    out = res.update_project_page("ws", "proj", "pg1", {"name": "Renamed"})
+    assert captured["endpoint"] == "ws/projects/proj/pages/pg1"
+    assert captured["data"] == {"name": "Renamed"}
+    assert out.name == "Renamed"
+
+
+def test_archive_unarchive_project_page_paths(monkeypatch):
+    res = _client().pages
+    captured = {}
+
+    def _post(endpoint, *a, **k):
+        captured["endpoint"] = endpoint
+        return {"archived_at": "2026-07-01"}
+
+    monkeypatch.setattr(res, "_post", _post)
+    res.archive_project_page("ws", "proj", "pg1")
+    assert captured["endpoint"] == "ws/projects/proj/pages/pg1/archive"
+    res.unarchive_project_page("ws", "proj", "pg1")
+    assert captured["endpoint"] == "ws/projects/proj/pages/pg1/unarchive"
