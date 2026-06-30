@@ -434,3 +434,21 @@ def test_archive_unarchive_project_page_paths(monkeypatch):
     assert captured["endpoint"] == "ws/projects/proj/pages/pg1/archive"
     res.unarchive_project_page("ws", "proj", "pg1")
     assert captured["endpoint"] == "ws/projects/proj/pages/pg1/unarchive"
+
+
+# --- Sprint 4: views carry rich_filters (the field the Plane UI renders from) ---
+
+
+def test_create_view_carries_rich_filters():
+    body = CreateView(
+        name="v",
+        rich_filters={"priority__in": ["urgent"]},
+        filters={"priority": ["urgent"]},
+    ).model_dump(exclude_none=True)
+    assert body["rich_filters"] == {"priority__in": ["urgent"]}
+    assert body["filters"] == {"priority": ["urgent"]}
+
+
+def test_update_view_carries_rich_filters():
+    body = UpdateView(rich_filters={"priority__in": ["high"]}).model_dump(exclude_none=True)
+    assert body["rich_filters"] == {"priority__in": ["high"]}

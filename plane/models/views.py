@@ -18,6 +18,7 @@ class View(BaseModel):
     description: str | None = None
     query: Any | None = None
     filters: Any | None = None
+    rich_filters: Any | None = None
     display_filters: Any | None = None
     display_properties: Any | None = None
     access: int | None = None
@@ -43,6 +44,7 @@ class CreateView(BaseModel):
     description: str | None = None
     query: Any | None = None
     filters: Any | None = None
+    rich_filters: Any | None = None
     display_filters: Any | None = None
     display_properties: Any | None = None
     access: int | None = None
@@ -57,6 +59,7 @@ class UpdateView(BaseModel):
     description: str | None = None
     query: Any | None = None
     filters: Any | None = None
+    rich_filters: Any | None = None
     display_filters: Any | None = None
     display_properties: Any | None = None
     access: int | None = None
